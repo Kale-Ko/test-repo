@@ -1,0 +1,24 @@
+{
+  "name": "collaborative-markdown-editor",
+  "version": "1.0.0",
+  "description": "A real-time collaborative markdown editor with WebSocket sync and conflict resolution",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "markdown",
+    "collaborative",
+    "websocket",
+    "real-time",
+    "editor"
+  ],
+  "author": "Kale",
+  "license": "MIT",
+  "dependencies": {
+    "marked": "^11.2.0",
+    "uuid": "^9.0.1",
+    "ws": "^8.14.2"
+  }
+}

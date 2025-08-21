@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collaborative Markdown Editor</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 Collaborative Markdown Editor</h1>
+            <div class="users-panel">
+                <span class="users-label">Active Users:</span>
+                <div id="active-users" class="active-users"></div>
+            </div>
+        </header>
+        
+        <main class="editor-container">
+            <div class="editor-panel">
+                <div class="panel-header">
+                    <h3>📝 Editor</h3>
+                    <div class="connection-status">
+                        <span id="connection-status" class="status-disconnected">Disconnected</span>
+                    </div>
+                </div>
+                <div class="editor-wrapper">
+                    <textarea id="markdown-editor" placeholder="Start typing your markdown here..."></textarea>
+                    <div id="cursors-overlay" class="cursors-overlay"></div>
+                </div>
+            </div>
+            
+            <div class="preview-panel">
+                <div class="panel-header">
+                    <h3>👀 Preview</h3>
+                </div>
+                <div id="markdown-preview" class="preview-content"></div>
+            </div>
+        </main>
+        
+        <footer>
+            <p>Real-time collaborative editing with WebSocket synchronization</p>
+        </footer>
+    </div>
+    
+    <script src="marked.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
