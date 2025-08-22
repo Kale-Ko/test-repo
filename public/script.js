@@ -7,6 +7,8 @@ class CollaborativeEditor {
         this.isConnected = false;
         this.users = new Map();
         this.lastCursorPosition = 0;
+        this.documentUuid = null;
+        this.user = null;
         
         // Track previous state for accurate operation detection
         this.previousContent = '';
@@ -19,8 +21,61 @@ class CollaborativeEditor {
         this.activeUsers = document.getElementById('active-users');
         this.cursorsOverlay = document.getElementById('cursors-overlay');
         
-        this.setupEventListeners();
-        this.connect();
+        // Check authentication and document access
+        this.checkAuthAndDocument();
+    }
+    
+    checkAuthAndDocument() {
+        // Check if user is logged in
+        this.user = JSON.parse(localStorage.getItem('user'));
+        if (!this.user) {
+            this.showAuthRequired();
+            return;
+        }
+        
+        // Get document UUID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        this.documentUuid = urlParams.get('doc');
+        
+        if (!this.documentUuid) {
+            window.location.href = 'dashboard.html';
+            return;
+        }
+        
+        // Verify document access
+        this.verifyDocumentAccess();
+    }
+    
+    async verifyDocumentAccess() {
+        try {
+            const response = await fetch(`/api/documents/${this.documentUuid}/access?user=${this.user.id}`);
+            if (response.ok) {
+                // User has access, proceed with editor setup
+                this.setupEventListeners();
+                this.connect();
+            } else {
+                this.showAccessDenied();
+            }
+        } catch (error) {
+            console.error('Error verifying document access:', error);
+            this.showAccessDenied();
+        }
+    }
+    
+    showAuthRequired() {
+        document.getElementById('auth-check').style.display = 'flex';
+    }
+    
+    showAccessDenied() {
+        const authCheck = document.getElementById('auth-check');
+        authCheck.style.display = 'flex';
+        authCheck.innerHTML = `
+            <div class="auth-message">
+                <h3>Access Denied</h3>
+                <p>You don't have permission to access this document.</p>
+                <a href="dashboard.html" class="dashboard-link">Go to Dashboard</a>
+            </div>
+        `;
     }
     
     setupEventListeners() {
@@ -58,7 +113,7 @@ class CollaborativeEditor {
     
     connect() {
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${protocol}//${window.location.host}`;
+        const wsUrl = `${protocol}//${window.location.host}?doc=${this.documentUuid}&user=${this.user.id}`;
         
         this.updateConnectionStatus('connecting');
         

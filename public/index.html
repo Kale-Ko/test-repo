@@ -10,40 +10,46 @@
     <div class="container">
         <header>
             <h1>🚀 Collaborative Markdown Editor</h1>
-            <div class="users-panel">
-                <span class="users-label">Active Users:</span>
-                <div id="active-users" class="active-users"></div>
-            </div>
         </header>
         
-        <main class="editor-container">
-            <div class="editor-panel">
-                <div class="panel-header">
-                    <h3>📝 Editor</h3>
-                    <div class="connection-status">
-                        <span id="connection-status" class="status-disconnected">Disconnected</span>
-                    </div>
-                </div>
-                <div class="editor-wrapper">
-                    <textarea id="markdown-editor" placeholder="Start typing your markdown here..."></textarea>
-                    <div id="cursors-overlay" class="cursors-overlay"></div>
-                </div>
-            </div>
+        <div style="text-align: center; padding: 4rem 2rem;">
+            <h2>Welcome to Collaborative Markdown Editor</h2>
+            <p style="margin: 2rem 0; font-size: 1.1rem; color: #666;">
+                Create and edit markdown documents in real-time with your team
+            </p>
             
-            <div class="preview-panel">
-                <div class="panel-header">
-                    <h3>👀 Preview</h3>
-                </div>
-                <div id="markdown-preview" class="preview-content"></div>
+            <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                <a href="login.html" style="
+                    display: inline-block;
+                    padding: 1rem 2rem;
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    color: white;
+                    text-decoration: none;
+                    border-radius: 15px;
+                    font-weight: 600;
+                    transition: transform 0.2s;
+                ">Login</a>
+                
+                <a href="signup.html" style="
+                    display: inline-block;
+                    padding: 1rem 2rem;
+                    background: linear-gradient(135deg, #51cf66 0%, #40c057 100%);
+                    color: white;
+                    text-decoration: none;
+                    border-radius: 15px;
+                    font-weight: 600;
+                    transition: transform 0.2s;
+                ">Sign Up</a>
             </div>
-        </main>
-        
-        <footer>
-            <p>Real-time collaborative editing with WebSocket synchronization</p>
-        </footer>
+        </div>
     </div>
     
-    <script src="marked.min.js"></script>
-    <script src="script.js"></script>
+    <script>
+        // Check if user is already logged in
+        const user = localStorage.getItem('user');
+        if (user) {
+            window.location.href = 'dashboard.html';
+        }
+    </script>
 </body>
 </html>

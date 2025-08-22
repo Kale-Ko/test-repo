@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - Collaborative Markdown Editor</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .auth-container {
+            max-width: 400px;
+            margin: 100px auto;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+        }
+        
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .auth-form input {
+            padding: 0.75rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #333;
+            font-size: 1rem;
+            backdrop-filter: blur(5px);
+        }
+        
+        .auth-form input::placeholder {
+            color: rgba(51, 51, 51, 0.7);
+        }
+        
+        .auth-form button {
+            padding: 0.75rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .auth-form button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .auth-form button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .auth-link {
+            text-align: center;
+            margin-top: 1rem;
+            color: #667eea;
+        }
+        
+        .auth-link a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        
+        .auth-link a:hover {
+            text-decoration: underline;
+        }
+        
+        .error-message {
+            color: #ff6b6b;
+            text-align: center;
+            padding: 0.5rem;
+            border-radius: 10px;
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid rgba(255, 107, 107, 0.3);
+        }
+        
+        .success-message {
+            color: #51cf66;
+            text-align: center;
+            padding: 0.5rem;
+            border-radius: 10px;
+            background: rgba(81, 207, 102, 0.1);
+            border: 1px solid rgba(81, 207, 102, 0.3);
+        }
+        
+        .password-requirements {
+            font-size: 0.8rem;
+            color: rgba(51, 51, 51, 0.7);
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 Collaborative Markdown Editor</h1>
+        </header>
+        
+        <div class="auth-container">
+            <h2 style="text-align: center; margin-bottom: 2rem; color: #333;">Sign Up</h2>
+            
+            <div id="message-container"></div>
+            
+            <form class="auth-form" id="signup-form">
+                <input 
+                    type="text" 
+                    id="username" 
+                    placeholder="Username" 
+                    required 
+                    autocomplete="username"
+                    pattern="[a-zA-Z0-9_]{3,20}"
+                    title="Username must be 3-20 characters, letters, numbers, and underscores only"
+                >
+                <input 
+                    type="password" 
+                    id="password" 
+                    placeholder="Password" 
+                    required 
+                    autocomplete="new-password"
+                    minlength="6"
+                >
+                <div class="password-requirements">
+                    Password must be at least 6 characters long
+                </div>
+                <input 
+                    type="password" 
+                    id="confirm-password" 
+                    placeholder="Confirm Password" 
+                    required 
+                    autocomplete="new-password"
+                >
+                <button type="submit" id="signup-btn">Sign Up</button>
+            </form>
+            
+            <div class="auth-link">
+                Already have an account? <a href="login.html">Login here</a>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.getElementById('signup-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            const signupBtn = document.getElementById('signup-btn');
+            const messageContainer = document.getElementById('message-container');
+            
+            // Validate password confirmation
+            if (password !== confirmPassword) {
+                messageContainer.innerHTML = '<div class="error-message">Passwords do not match</div>';
+                return;
+            }
+            
+            // Disable form
+            signupBtn.disabled = true;
+            signupBtn.textContent = 'Signing up...';
+            messageContainer.innerHTML = '';
+            
+            try {
+                const response = await fetch('/api/auth/signup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Store user session
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    
+                    // Show success message
+                    messageContainer.innerHTML = '<div class="success-message">Account created successfully! Redirecting...</div>';
+                    
+                    // Redirect to dashboard
+                    setTimeout(() => {
+                        window.location.href = 'dashboard.html';
+                    }, 1000);
+                } else {
+                    messageContainer.innerHTML = `<div class="error-message">${data.error || 'Signup failed'}</div>`;
+                }
+            } catch (error) {
+                messageContainer.innerHTML = '<div class="error-message">Network error. Please try again.</div>';
+            } finally {
+                signupBtn.disabled = false;
+                signupBtn.textContent = 'Sign Up';
+            }
+        });
+        
+        // Check if user is already logged in
+        const user = localStorage.getItem('user');
+        if (user) {
+            window.location.href = 'dashboard.html';
+        }
+    </script>
+</body>
+</html>

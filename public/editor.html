@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collaborative Markdown Editor</title>
+    <style>
+        .auth-check {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        
+        .auth-message {
+            text-align: center;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .dashboard-link {
+            display: inline-block;
+            margin-top: 1rem;
+            padding: 0.5rem 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            transition: transform 0.2s;
+        }
+        
+        .dashboard-link:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 Collaborative Markdown Editor</h1>
+            <div class="users-panel">
+                <span class="users-label">Active Users:</span>
+                <div id="active-users" class="active-users"></div>
+                <a href="dashboard.html" class="dashboard-link" style="margin-left: 1rem; padding: 0.3rem 0.8rem; font-size: 0.9rem;">Dashboard</a>
+            </div>
+        </header>
+        
+        <main class="editor-container">
+            <div class="editor-panel">
+                <div class="panel-header">
+                    <h3>📝 Editor</h3>
+                    <div class="connection-status">
+                        <span id="connection-status" class="status-disconnected">Disconnected</span>
+                    </div>
+                </div>
+                <div class="editor-wrapper">
+                    <textarea id="markdown-editor" placeholder="Start typing your markdown here..."></textarea>
+                    <div id="cursors-overlay" class="cursors-overlay"></div>
+                </div>
+            </div>
+            
+            <div class="preview-panel">
+                <div class="panel-header">
+                    <h3>👀 Preview</h3>
+                </div>
+                <div id="markdown-preview" class="preview-content"></div>
+            </div>
+        </main>
+        
+        <footer>
+            <p>Real-time collaborative editing with WebSocket synchronization</p>
+        </footer>
+    </div>
+    
+    <!-- Authentication Check -->
+    <div id="auth-check" class="auth-check" style="display: none;">
+        <div class="auth-message">
+            <h3>Authentication Required</h3>
+            <p>You need to be logged in to access this document.</p>
+            <a href="login.html" class="dashboard-link">Login</a>
+        </div>
+    </div>
+    
+    <script src="marked.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

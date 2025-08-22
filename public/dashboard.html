@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Collaborative Markdown Editor</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .logout-btn {
+            padding: 0.5rem 1rem;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .logout-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .create-document-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .create-document-form {
+            display: flex;
+            gap: 1rem;
+            align-items: end;
+        }
+        
+        .form-group {
+            flex: 1;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #333;
+            font-size: 1rem;
+            backdrop-filter: blur(5px);
+        }
+        
+        .create-btn {
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #51cf66 0%, #40c057 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            white-space: nowrap;
+        }
+        
+        .create-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .create-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .documents-section {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 1.5rem;
+        }
+        
+        .documents-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .document-card {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 15px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+        
+        .document-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        
+        .document-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        
+        .document-meta {
+            font-size: 0.9rem;
+            color: rgba(51, 51, 51, 0.7);
+            margin-bottom: 1rem;
+        }
+        
+        .document-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .action-btn {
+            padding: 0.4rem 0.8rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: transform 0.2s;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-1px);
+        }
+        
+        .edit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .share-btn {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        
+        .copy-btn {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            color: #333;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: rgba(51, 51, 51, 0.7);
+        }
+        
+        .empty-state h3 {
+            margin-bottom: 1rem;
+            color: #333;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 20px;
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+        }
+        
+        .share-url-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.8);
+            margin-bottom: 1rem;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #667eea;
+        }
+        
+        .error-message {
+            color: #ff6b6b;
+            text-align: center;
+            padding: 0.5rem;
+            border-radius: 10px;
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid rgba(255, 107, 107, 0.3);
+            margin-bottom: 1rem;
+        }
+        
+        .success-message {
+            color: #51cf66;
+            text-align: center;
+            padding: 0.5rem;
+            border-radius: 10px;
+            background: rgba(81, 207, 102, 0.1);
+            border: 1px solid rgba(81, 207, 102, 0.3);
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 Collaborative Markdown Editor</h1>
+        </header>
+        
+        <div class="dashboard-container">
+            <div class="dashboard-header">
+                <div class="user-info">
+                    <h2 id="welcome-text">Welcome back!</h2>
+                    <span id="username-display"></span>
+                </div>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+            
+            <div class="create-document-section">
+                <h3>Create New Document</h3>
+                <div id="create-message-container"></div>
+                <form class="create-document-form" id="create-document-form">
+                    <div class="form-group">
+                        <label for="document-title">Document Title</label>
+                        <input type="text" id="document-title" placeholder="Enter document title" required>
+                    </div>
+                    <button type="submit" class="create-btn" id="create-btn">Create Document</button>
+                </form>
+            </div>
+            
+            <div class="documents-section">
+                <h3>Your Documents</h3>
+                <div id="documents-container">
+                    <div class="loading">Loading your documents...</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Share Modal -->
+        <div id="share-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Share Document</h3>
+                    <button class="close-btn" onclick="closeShareModal()">&times;</button>
+                </div>
+                <div id="share-message-container"></div>
+                <p>Share this URL with others to give them access to your document:</p>
+                <input type="text" id="share-url-input" class="share-url-input" readonly>
+                <button class="copy-btn" onclick="copyShareUrl()">Copy URL</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="dashboard.js"></script>
+</body>
+</html>
