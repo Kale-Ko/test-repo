@@ -8,6 +8,11 @@ class CollaborativeEditor {
         this.users = new Map();
         this.lastCursorPosition = 0;
         
+        // Track previous state for accurate operation detection
+        this.previousContent = '';
+        this.previousSelectionStart = 0;
+        this.previousSelectionEnd = 0;
+        
         this.editor = document.getElementById('markdown-editor');
         this.preview = document.getElementById('markdown-preview');
         this.connectionStatus = document.getElementById('connection-status');
@@ -23,6 +28,11 @@ class CollaborativeEditor {
         this.editor.addEventListener('input', (e) => {
             this.handleTextChange(e);
             this.updatePreview();
+        });
+        
+        // Capture state before changes for accurate operation detection
+        this.editor.addEventListener('beforeinput', (e) => {
+            this.captureEditorState();
         });
         
         // Cursor movement events
@@ -95,6 +105,9 @@ class CollaborativeEditor {
                 this.editor.value = message.content;
                 this.updatePreview();
                 
+                // Initialize state tracking
+                this.captureEditorState();
+                
                 // Initialize other users
                 message.users.forEach(user => {
                     if (user.id !== this.userId) {
@@ -107,6 +120,8 @@ class CollaborativeEditor {
             case 'operation':
                 this.applyRemoteOperation(message.operation);
                 this.updatePreview();
+                // Update state tracking after remote changes
+                this.captureEditorState();
                 break;
                 
             case 'cursor':
@@ -130,13 +145,19 @@ class CollaborativeEditor {
         }
     }
     
+    captureEditorState() {
+        this.previousContent = this.editor.value;
+        this.previousSelectionStart = this.editor.selectionStart;
+        this.previousSelectionEnd = this.editor.selectionEnd;
+    }
+    
     handleTextChange(event) {
         if (!this.isConnected) return;
         
         const currentContent = this.editor.value;
         const cursorPos = this.editor.selectionStart;
         
-        // Create operation based on input type
+        // Create operation based on comparing previous and current state
         let operation = null;
         
         if (event.inputType === 'insertText' || event.inputType === 'insertCompositionText') {
@@ -147,14 +168,17 @@ class CollaborativeEditor {
                 version: this.documentVersion
             };
         } else if (event.inputType === 'deleteContentBackward' || event.inputType === 'deleteContentForward') {
-            // For deletions, we need to figure out what was deleted
-            // This is a simplified approach
-            operation = {
-                type: 'delete',
-                position: cursorPos,
-                content: event.data || 'x', // Simplified - in real implementation, track previous content
-                version: this.documentVersion
-            };
+            // Calculate what was actually deleted by comparing before/after states
+            const deletedContent = this.calculateDeletedContent(this.previousContent, currentContent, this.previousSelectionStart, this.previousSelectionEnd);
+            
+            if (deletedContent.content.length > 0) {
+                operation = {
+                    type: 'delete',
+                    position: deletedContent.position,
+                    content: deletedContent.content,
+                    version: this.documentVersion
+                };
+            }
         } else if (event.inputType === 'insertParagraph' || event.inputType === 'insertLineBreak') {
             operation = {
                 type: 'insert',
@@ -162,6 +186,48 @@ class CollaborativeEditor {
                 content: '\n',
                 version: this.documentVersion
             };
+        } else if (event.inputType === 'insertFromPaste') {
+            // Handle paste operations
+            const insertedContent = this.calculateInsertedContent(this.previousContent, currentContent, this.previousSelectionStart);
+            
+            if (insertedContent.content.length > 0) {
+                operation = {
+                    type: 'insert',
+                    position: insertedContent.position,
+                    content: insertedContent.content,
+                    version: this.documentVersion
+                };
+            }
+        } else if (event.inputType === 'insertReplacementText' || event.inputType === 'deleteByDrag' || event.inputType === 'deleteByCut') {
+            // Handle replacement operations (select + type/paste)
+            const changes = this.calculateReplacementChanges(this.previousContent, currentContent, this.previousSelectionStart, this.previousSelectionEnd);
+            
+            if (changes.deletedContent.length > 0) {
+                // Send delete operation first
+                const deleteOp = {
+                    type: 'delete',
+                    position: changes.deletePosition,
+                    content: changes.deletedContent,
+                    version: this.documentVersion
+                };
+                
+                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    this.ws.send(JSON.stringify({
+                        type: 'operation',
+                        operation: deleteOp
+                    }));
+                }
+            }
+            
+            if (changes.insertedContent.length > 0) {
+                // Send insert operation
+                operation = {
+                    type: 'insert',
+                    position: changes.insertPosition,
+                    content: changes.insertedContent,
+                    version: this.documentVersion
+                };
+            }
         }
         
         if (operation && this.ws && this.ws.readyState === WebSocket.OPEN) {
@@ -170,6 +236,72 @@ class CollaborativeEditor {
                 operation: operation
             }));
         }
+    }
+    
+    calculateDeletedContent(previousContent, currentContent, selectionStart, selectionEnd) {
+        // If there was a selection, the deleted content is the selected text
+        if (selectionStart !== selectionEnd) {
+            return {
+                position: selectionStart,
+                content: previousContent.substring(selectionStart, selectionEnd)
+            };
+        }
+        
+        // Find the difference between previous and current content
+        let deletePosition = -1;
+        let deletedContent = '';
+        
+        // Find where the content differs
+        for (let i = 0; i < Math.max(previousContent.length, currentContent.length); i++) {
+            if (i >= currentContent.length || i >= previousContent.length || previousContent[i] !== currentContent[i]) {
+                deletePosition = i;
+                break;
+            }
+        }
+        
+        if (deletePosition !== -1) {
+            // Calculate how much was deleted
+            const lengthDiff = previousContent.length - currentContent.length;
+            if (lengthDiff > 0) {
+                deletedContent = previousContent.substring(deletePosition, deletePosition + lengthDiff);
+            }
+        }
+        
+        return {
+            position: deletePosition !== -1 ? deletePosition : selectionStart,
+            content: deletedContent
+        };
+    }
+    
+    calculateInsertedContent(previousContent, currentContent, selectionStart) {
+        // Find where content was inserted
+        let insertPosition = selectionStart;
+        let insertedContent = '';
+        
+        const lengthDiff = currentContent.length - previousContent.length;
+        if (lengthDiff > 0) {
+            insertedContent = currentContent.substring(selectionStart, selectionStart + lengthDiff);
+        }
+        
+        return {
+            position: insertPosition,
+            content: insertedContent
+        };
+    }
+    
+    calculateReplacementChanges(previousContent, currentContent, selectionStart, selectionEnd) {
+        const deletedContent = selectionStart !== selectionEnd ? 
+            previousContent.substring(selectionStart, selectionEnd) : '';
+        
+        const insertedContent = currentContent.substring(selectionStart, 
+            selectionStart + (currentContent.length - previousContent.length + deletedContent.length));
+        
+        return {
+            deletePosition: selectionStart,
+            deletedContent: deletedContent,
+            insertPosition: selectionStart,
+            insertedContent: insertedContent
+        };
     }
     
     handleCursorChange() {
